@@ -1,0 +1,17 @@
+2.4 安装Node 包管理器 
+Node 包管理器（npm ）是一个由 Node.js  官方提供的第三方包管理工具，就像 PHP  的 
+Pear 、Python 的 PyPI  一样。npm 是一个完全由 JavaScript  实现的命令行工具，通过 Node.js  执
+行，因此严格来讲它不属于 Node.js  的一部分。在最初的版本中，我们需要在安装完 Node.js 
+以后手动安装npm 。但从 Node.js 0.6  开始，npm 已包含在发行包中了，我们在 Windows、
+Mac 上安装包和源代码包时会自动同时安装 npm。 
+如果你是在 Windows 下手动编译的，或是在 POSIX 系统中编译时指定了 --without-npm 
+参数，那就需要手动安装 npm  了。http://npmjs.org/ 提供了 npm  几种不同的安装方法，通常
+2.5  安装多版本管理器    19 
+ 
+
+你只需要执行以下命令： 
+curl http://npmjs.org/install.sh | sh 
+如果安装过程中出现了权限问题，那么需要在 root  权限下执行上面的语句，或者使用sudo。 
+curl http://npmjs.org/install.sh | sudo sh 
+其他安装方法，譬如从 git  中获取 npm  的最新分支，可以参考 http://npmjs.org/doc/ 
+README.html上的说明。

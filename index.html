@@ -17,7 +17,12 @@
 			});
 
 			$("ul a.text-light").click(function(){
-				$("#ajaxLoad").load("./chapter1.html");
+				var href = $(this).attr("href");
+				$("#ajaxLoad").load(href,function(res,status,xhr){
+					if(status=="error"){
+						alert("load error!");
+					}
+				});
 			})
 		});
 	</script>
@@ -25,11 +30,11 @@
 <body class="mx-3">
 	<div class="container-fluid">
 		<div class="row">
-			<div class="col bg-dark text-white display-4 py-2">Node.js开发指南</div>	
+			<div class="col bg-dark text-white display-4 py-2 rounded-top">Node.js开发指南</div>	
 		</div>
 	</div>
 	
-	<div class="container-fluid my-2" >
+	<div class="container-fluid my-2 bg-white" >
 		<div class="row">
 			<div class="col-2 bg-secondary" id="accordion">
 				<ul class="list-unstyled ">
@@ -64,19 +69,19 @@
 						</div>
 						<ul id="collapse2" class="collapse text-light pl-4" aria-labelledby="" data-parent="#accordion">
 							<li>
-								<a href="./chapter2.html" class="text-light">2.1 安装前准备</a>
+								<a href="./chapter2_1.html" class="text-light">2.1 安装前准备</a>
 							</li>
 							<li>
-								<a href="./chapter2.html" class="text-light">2.2 快速安装</a>
+								<a href="./chapter2_2.html" class="text-light">2.2 快速安装</a>
 							</li>
 							<li>
-								<a href="./chapter2.html" class="text-light">2.3 编译源代码</a>
+								<a href="./chapter2_3.html" class="text-light">2.3 编译源代码</a>
 							</li>
 							<li>
-								<a href="./chapter2.html" class="text-light">2.4 安装node包管理器</a>
+								<a href="./chapter2_4.html" class="text-light">2.4 安装node包管理器</a>
 							</li>
 							<li>
-								<a href="./chapter2.html" class="text-light">2.5 安装多版本管理器</a>
+								<a href="./chapter2_5.html" class="text-light">2.5 安装多版本管理器</a>
 							</li>
 						</ul>
 					</li>
@@ -86,16 +91,16 @@
 						</div>
 						<ul id="collapse3" class="collapse text-light pl-4" aria-labelledby="" data-parent="#accordion">
 							<li>
-								<a href="./chapter3.html" class="text-light">3.1 开始用node.js编程</a>
+								<a href="./chapter3_1.html" class="text-light">3.1 开始用node.js编程</a>
 							</li>
 							<li>
-								<a href="./chapter3.html" class="text-light">3.2 异步式I/O与事件编程</a>
+								<a href="./chapter3_2.html" class="text-light">3.2 异步式I/O与事件编程</a>
 							</li>
 							<li>
-								<a href="./chapter3.html" class="text-light">3.3 模块和包</a>
+								<a href="./chapter3_3.html" class="text-light">3.3 模块和包</a>
 							</li>
 							<li>
-								<a href="./chapter3.html" class="text-light">3.4 调试</a>
+								<a href="./chapter3_4.html" class="text-light">3.4 调试</a>
 							</li>
 						</ul>
 					</li>
@@ -105,19 +110,19 @@
 						</div>
 						<ul id="collapse4" class="collapse text-light pl-4" aria-labelledby="" data-parent="#accordion">
 							<li>
-								<a href="./chapter4.html" class="text-light">4.1 全局对象</a>
+								<a href="./chapter4_1.html" class="text-light">4.1 全局对象</a>
 							</li>
 							<li>
-								<a href="./chapter4.html" class="text-light">4.2 常用工具 util</a>
+								<a href="./chapter4_2.html" class="text-light">4.2 常用工具 util</a>
 							</li>
 							<li>
-								<a href="./chapter4.html" class="text-light">4.3 事件驱动 events</a>
+								<a href="./chapter4_3.html" class="text-light">4.3 事件驱动 events</a>
 							</li>
 							<li>
-								<a href="./chapter4.html" class="text-light">4.4 文件系统fs</a>
+								<a href="./chapter4_4.html" class="text-light">4.4 文件系统fs</a>
 							</li>
 							<li>
-								<a href="./chapter4.html" class="text-light">4.5 HTTP服务器与客户端</a>
+								<a href="./chapter4_5.html" class="text-light">4.5 HTTP服务器与客户端</a>
 							</li>
 						</ul>
 					</li>
@@ -127,25 +132,25 @@
 						</div>
 						<ul id="collapse5" class="collapse text-light pl-4" aria-labelledby="" data-parent="#accordion">
 							<li>
-								<a href="./chapter5.html" class="text-light">5.1 准备工作</a>
+								<a href="./chapter5_1.html" class="text-light">5.1 准备工作</a>
 							</li>
 							<li>
-								<a href="./chapter5.html" class="text-light">5.2 快速开始</a>
+								<a href="./chapter5_2.html" class="text-light">5.2 快速开始</a>
 							</li>
 							<li>
-								<a href="./chapter5.html" class="text-light">5.3 路由控制</a>
+								<a href="./chapter5_3.html" class="text-light">5.3 路由控制</a>
 							</li>
 							<li>
-								<a href="./chapter5.html" class="text-light">5.4 模板引擎</a>
+								<a href="./chapter5_4.html" class="text-light">5.4 模板引擎</a>
 							</li>
 							<li>
-								<a href="./chapter5.html" class="text-light">5.5 建立微博网站</a>
+								<a href="./chapter5_5.html" class="text-light">5.5 建立微博网站</a>
 							</li>
 							<li>
-								<a href="./chapter5.html" class="text-light">5.6 用户注册和登录</a>
+								<a href="./chapter5_6.html" class="text-light">5.6 用户注册和登录</a>
 							</li>
 							<li>
-								<a href="./chapter5.html" class="text-light">5.7 发表微博</a>
+								<a href="./chapter5_7.html" class="text-light">5.7 发表微博</a>
 							</li>
 						</ul>
 					</li>
@@ -155,31 +160,37 @@
 						</div>
 						<ul id="collapse6" class="collapse text-light pl-4" aria-labelledby="" data-parent="#accordion">
 							<li>
-								<a href="./chapter6.html" class="text-light">6.1 模块加载机制</a>
+								<a href="./chapter6_1.html" class="text-light">6.1 模块加载机制</a>
 							</li>
 							<li>
-								<a href="./chapter6.html" class="text-light">6.2 控制流</a>
+								<a href="./chapter6_2.html" class="text-light">6.2 控制流</a>
 							</li>
 							<li>
-								<a href="./chapter6.html" class="text-light">6.3 node.js应用部署</a>
+								<a href="./chapter6_3.html" class="text-light">6.3 node.js应用部署</a>
 							</li>
 							<li>
-								<a href="./chapter6.html" class="text-light">6.4 node.js不是银弹</a>
+								<a href="./chapter6_4.html" class="text-light">6.4 node.js不是银弹</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				
 			</div>
-			<div class="col-10 bg-info" id="ajaxLoad">
-				hello
+			<div class="col-10 pr-0">
+				<div class="col bg-secondary text-light py-3" id="ajaxLoad">
+					Hello, welcome to Node.js ....<br>
+					I am semi from ChongMing Island. <br>					
+				</div>
+
 			</div>
 		</div>		
 	</div>
 	
 	<div class="container-fluid">
-		<div class="row bg-warning">
-			<span class="col-md-3 offset-md-9 text-right py-3">2018 by Semi</span>
+		<div class="row bg-secondary">
+			<div class="col-md-3 offset-md-9 text-right py-3">
+				<span class="badge badge-info">2018 by Semi</span>
+			</div>
 		</div>		
 	</div>
 </body>
