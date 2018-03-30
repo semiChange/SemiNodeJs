@@ -1,0 +1,273 @@
+6.3  Node.js 应用部署 
+在第5章我们已经使用Express实现了一个微博网站，在开发的过程中，通过node  app.js 
+命令运行服务器即可。但它不适合在产品环境下使用，为什么呢？因为到目前为止这个服务
+器还有几个重大缺陷。 
+   不支持故障恢复 
+不知你是否在调试的过程中注意，当程序有错误发生时，整个进程就会结束，需要重
+新在终端中启动服务器。这一点在开发中无可厚非，但在产品环境下就是严重的问题
+了，因为一旦用户访问时触发了程序中某个隐含的bug ，整个服务器就崩溃了，将无
+法继续为所有用户提供服务。在部署Node.js 应用的时候一定要考虑到故障恢复，提
+高系统的可靠性。 
+   没有日志 
+对于开发者来说，日志，尤其是错误日志是及其重要的，经常查看它可以发现测试时
+没有注意到的程序错误。然而这个服务器运行时没有产生任何日志，包括访问日志和
+错误日志，所以有必要实现它的日志功能。 
+   无法利用多核提高性能 
+由于Node.js是单线程的，一个进程只能利用一个CPU   核心。当请求大量到来时，单
+线程就成为了提高吞吐量的瓶颈。随着多核乃至众核时代的到来，只能利用一个核心
+所带来的浪费是十分严重的，我们需要使用多进程来提高系统的性能。 
+   独占端口 
+假如整个服务器只有一个网站，或者可以给每个网站分配一个独立的IP 地址，不会有
+端口冲突的问题。而很多时候为了充分利用服务器的资源，我们会在同一个服务器上
+建立多个网站，而且这些网站可能有的是PHP ，有的是 Rails，有的是 Node.js。不能每
+个进程都独占80端口，所以我们有必要通过反向代理来实现基于域名的端口共享。 
+   需要手动启动 
+先前每次启动服务器都是通过在命令行中直接键入命令来实现的，但在产品环境中，
+特别是在服务器重启以后，全部靠手动启动是不现实的。因此，我们应该制作一个自
+动启动服务器的脚本，并且通过该脚本可以实现停止服务器等功能。 
+6.3.1  日志功能 
+下面我们开始在第5章的代码的基础上，介绍如何实现服务器的日志功能。Express支持
+6.3  Node.js 应用部署   139 
+ 
+1 
+2 
+3 
+5 
+7 
+10 
+8 
+9 
+4 
+6 
+两种运行模式：开发模式和产品模式，前者的目的是利于调试，后者则是利于部署。使用产
+品模式运行服务器的方式很简单，只需设置NODE_ENV  环境变量。通过NODE_ENV=production 
+node  app.js命令运行服务器可以看到： 
+Express server listening on port 3000 in production mode 
+接下来让我们实现访问日志和错误日志功能。访问日志就是记录用户对服务器的每个请
+求，包括客户端IP 地址，访问时间，访问路径，服务器响应以及客户端代理字符串。而错误
+日志则记录程序发生错误时的信息，由于调试中需要即时查看错误信息，将所有错误直接显
+示到终端即可，而在产品模式中，需要写入错误日志文件。 
+Express 提供了一个访问日志中间件，只需指定stream 参数为一个输出流即可将访问日
+志写入文件。打开app.js，在最上方加入以下代码： 
+var  fs = require('fs'); 
+var  accessLogfile = fs.createWriteStream('access.log', {flags: 'a'}); 
+var  errorLogfile = fs.createWriteStream('error.log', {flags: 'a'}); 
+然后在app.configure 函数第一行加入： 
+app.use(express.logger({stream: accessLogfile})); 
+至于错误日志，需要单独实现错误响应，修改如下： 
+app.configure('production',  function (){ 
+app.error(function  (err, req, res, next) { 
+var  meta = '[' + new Date () + '] ' + req.url + '\n'; 
+errorLogfile.write(meta + err.stack + '\n'); 
+next(); 
+}); 
+}); 
+这段代码的功能是通过app.error 注册错误响应函数，在其中将错误写入错误日志流。 
+现在重新运行服务器，在浏览器中访问 http://127.0.0.1:3000/ ，即可在app.js 同一目录下
+的 access.log  文件中看到与以下类似的内容： 
+127.0.0.1 - - [Thu, 5 Apr 2012 15:29:28 GMT] "GET / HTTP/1.1" 200 3389 "-" "Mozilla/5.0 
+(Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) 
+Chrome/18.0.1025.162 Safari/535.19" 
+127.0.0.1 - - [Thu, 5 Apr 2012 15:29:28 GMT] "GET /stylesheets/bootstrap-responsive.css 
+HTTP/1.1" 304 - "http://127.0.0.1:3000/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) 
+AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.162 Safari/535.19" 
+127.0.0.1 - - [Thu, 5 Apr 2012 15:29:28 GMT] "GET /javascripts/jquery.js HTTP/1.1" 304 
+- "http://127.0.0.1:3000/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) 
+AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.162 Safari/535.19" 
+127.0.0.1 - - [Thu, 5 Apr 2012 15:29:28 GMT] "GET /javascripts/bootstrap.js HTTP/1.1" 
+304 - "http://127.0.0.1:3000/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) 
+AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.162 Safari/535.19" 
+140  第 6 章  Node.js进阶话题 
+ 
+127.0.0.1 - - [Thu, 5 Apr 2012 15:29:28 GMT] "GET /stylesheets/bootstrap.css HTTP/1.1" 
+304 - "http://127.0.0.1:3000/" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) 
+AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.162 Safari/535.19" 
+127.0.0.1 - - [Thu, 5 Apr 2012 15:29:28 GMT] "GET /favicon.ico HTTP/1.1" 404 - "-" 
+"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) 
+Chrome/18.0.1025.162 Safari/535.19" 
+为了产生一个错误，我们修改routes/index.js  中“ /  ”的响应函数，加入以下代码： 
+throw new Error('An error for test purposes.'); 
+再次访问 http://127.0.0.1:3000/ ，可以看到 error.log  输出了完整的错误内容，如下所示： 
+[Thu Apr 5 2012 23:33:21 GMT+0800 (CST)] / 
+Error: An error  for test  purposes. 
+    at Object.<anonymous> (/byvoid/microblog/routes/index.js:7:11) 
+    at nextMiddleware (/byvoid/microblog/node_modules/express/node_modules/connect/ 
+lib/middleware/router.js:175:25) 
+    at param (/byvoid/microblog/node_modules/express/node_modules/connect/lib/ 
+middleware/router.js:183:16) 
+    at pass (/byvoid/microblog/node_modules/express/node_modules/connect/lib/ 
+middleware/router.js:191:10) 
+    at Object.router [as handle] (/byvoid/microblog/node_modules/express/ 
+node_modules/connect/lib/middleware/router.js:197:6) 
+    at next (/byvoid/microblog/node_modules/express/node_modules/connect/lib/ 
+http.js:203:15) 
+    at /byvoid/microblog/node_modules/express/node_modules/connect/lib/middleware/ 
+session.js:323:9 
+    at /byvoid/microblog/node_modules/express/node_modules/connect/lib/middleware/ 
+session.js:342:9 
+    at /byvoid/microblog/node_modules/connect-mongo/lib/connect-mongo.js:151:15 
+    at /byvoid/microblog/node_modules/connect-mongo/node_modules/mongodb/lib/ 
+mongodb/collection.js:885:34 
+这样，一个简单有效的日志功能就这样实现了。 
+6.3.2 使用cluster模块 
+从0.6 版本开始，Node.js 提供了一个核心模块：cluster。cluster的功能是生成与当
+前进程相同的子进程，并且允许父进程和子进程之间共享端口。Node.js 的另一个核心模块
+child_process  也提供了相似的进程生成功能，但最大的区别在于cluster 允许跨进程端
+口复用，给我们的网络服务器开发带来了很大的方便。 
+为了在外部模块调用app.js，首先需要禁止服务器自动启动。修改app.js，在 app.listen 
+(3000); 前后加上判断语句： 
+if  (!module.parent) { 
+app.listen( 3000); 
+console.log("Express server listening on port %d in %s mode", app.address().port, 
+app.settings.env); 
+} 
+6.3  Node.js 应用部署   141 
+ 
+1 
+2 
+3 
+5 
+7 
+10 
+8 
+9 
+4 
+6 
+这个语句的功能是判断当前模块是不是由其他模块调用的，如果不是，说明它是直接启
+动的，此时启动调试服务器；如果是，则不自动启动服务器。经过这样的修改，以后直接调
+用node app.js服务器会直接运行，但在其他模块中调用require('./app') 则不会自动
+启动，需要再显式地调用  listen() 函数。 
+接下来就让我们通过cluster 调用app.js。创建cluster.js ，内容如下所示： 
+var  cluster = require('cluster'); 
+var  os = require('os'); 
+ 
+//  获取CPU 的数量 
+var  numCPUs = os.cpus().length; 
+ 
+var  workers = {}; 
+if (cluster.isMaster) { 
+//  主进程分支 
+cluster.on('death', function  (worker) { 
+//  当一个工作进程结束时，重启工作进程 
+delete  workers[worker.pid]; 
+worker = cluster.fork(); 
+workers[worker.pid] = worker; 
+}); 
+//  初始开启与CPU 数量相同的工作进程 
+for  (var  i = 0 ; i < numCPUs; i++) { 
+var  worker = cluster.fork(); 
+workers[worker.pid] = worker; 
+} 
+} else { 
+//  工作进程分支，启动服务器 
+var  app = require('./app'); 
+app.listen( 3000); 
+} 
+//  当主进程被终止时，关闭所有工作进程 
+process.on('SIGTERM', function () { 
+for  (var  pid in workers) { 
+process.kill(pid); 
+} 
+process.exit( 0 ); 
+}); 
+cluster.js  的功能是创建与CPU 核心个数相同的服务器进程，以确保充分利用多核CPU  的
+资源。主进程生成若干个工作进程，并监听工作进程结束事件，当工作进程结束时，重新启
+动一个工作进程。分支进程产生时会自顶向下重新执行当前程序，并通过分支判断进入工作
+进程分支，在其中读取模块并启动服务器。通过cluster启动的工作进程可以直接实现端口
+复用，因此所有工作进程只需监听同一端口。当主进程终止时，还要主动关闭所有工作进程。 
+142  第 6 章  Node.js进阶话题 
+ 
+在终端中执行node cluster.js 命令，可以看到进程列表中启动了多个 node 进程（8
+核CPU ）：  
+12408 ?       00:01:28 node 
+12411 ?       00:01:27 node 
+12412 ?       00:01:28 node 
+12414 ?       00:01:31 node 
+12416 ?       00:01:34 node 
+12418 ?       00:01:44 node 
+12420 ?       00:01:38 node 
+12422 ?       00:01:34 node 
+12424 ?       00:02:14 node 
+终止工作进程，新的工作进程会立即启动，终止主进程，所有工作进程也会同时结束。
+这样，一个既能利用多核资源，又有实现故障恢复功能的服务器就诞生了。 
+6.3.3  启动脚本 
+接下来，我们还需要一个启动脚本来简化维护工作。如果你维护过Linux  服务器，会对
+/etc/init.d/  下面的脚本有印象。例如使用/etc/init.d/nginx start   和/etc/init.d/ 
+nginx stop   可以启动和关闭Nginx  服务器。我们通过bash 脚本也来实现一个类似的功能，
+创建microblog 并使用chmod +x microblog 赋予其执行权限，脚本内容为： 
+#! /bin/sh 
+ 
+NODE_ENV=production 
+DAEMON="node cluster.js" 
+NAME=Microblog 
+DESC=Microblog 
+PIDFILE="microblog.pid" 
+ 
+case "$1" in 
+start)  
+         echo "Starting $DESC: " 
+        nohup $DAEMON > /dev/null & 
+         echo $! > $PIDFILE 
+         echo "$NAME." 
+        ;; 
+stop) 
+         echo "Stopping $DESC: " 
+        pid='cat $PIDFILE' 
+         kill $pid 
+        rm $PIDFILE 
+         echo "$NAME." 
+        ;; 
+esac 
+ 
+exit 0 
+6.3  Node.js 应用部署   143 
+ 
+1 
+2 
+3 
+5 
+7 
+10 
+8 
+9 
+4 
+6 
+它的功能是通过nohup   启动服务器，使进程不会因为退出终端而关闭，同时将主进程
+的pid  写入microblog.pid  文件。当调用结束命令时，从microblog.pid  读取pid  的值，终止主
+进程以关闭服务器。 
+运行./microblog start，结果如下： 
+Starting Microblog: 
+Microblog. 
+在该目录下生成了microblog.pid 文件，查看进程表可以发现服务器已经启动。关闭服务器时
+只需执行./microblog stop，即可结束所有工作进程。 
+有了这个启动脚本，我们就可以实现服务器的开机自动启动了，根据不同的操作系统，
+将其加入启动运行项即可，唯一需要修改的地方是DAEMON 和PIDFILE 应该写成绝对路径，
+以便在不同的目录下运行。 
+这段脚本只支持POSIX  操作系统，如 Linux、Mac OS 等，在 Windows 
+下不可用。 
+6.3.4 共享80端口 
+到目前为止，网站都是运行在3000 端口下的，也就是说用户必须在网址中加入:3000 才
+能访问网站。默认的HTTP 端口是80，因此必须监听80端口才能使网址更加简洁。如果整个
+服务器只有一个网站，那么只需让app.js  监听80   端口即可。但很多时候一个服务器上运行
+着不止一个网站，尤其是还有用其他语言（如PHP ）写成的网站，这该怎么办呢？此时虚拟
+主机可以粉墨登场了。 
+虚拟主机，就是让多个网站共享使用同一服务器同一IP 地址，通过域名的不同来划分请
+求。主流的HTTP服务器都提供了虚拟主机支持，如Nginx、Apache、IIS等。我们以Nginx为
+例，介绍如何通过反向代理实现Node.js 虚拟主机。 
+在Nginx  中设置反向代理和虚拟主机非常简单，下面是配置文件的一个示例： 
+server { 
+listen 80; 
+server_name mysite.com; 
+ 
+location / { 
+proxy_pass http://localhost:3000; 
+} 
+} 
+这个配置文件的功能是监听访问mysite.com 80  端口的请求，并将所有的请求转发给
+http://localhost:3000，即我们的 Node.js 服务器。现在访问http://mysite.com/，就相当于服务器
+144  第 6 章  Node.js进阶话题 
+ 
+访问http://localhost:3000了。 
+在添加了虚拟主机以后，还可以在Nginx配置文件中添加访问静态文件的规则（具体请
+参考Nginx文档），删去app.js 中的app.use(express.static(__dirname + '/public')); 。
+这样可以直接让Nginx  来处理静态文件，减少反向代理以及Node.js 的开销。

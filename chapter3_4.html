@@ -1,0 +1,255 @@
+3.4 调试 
+写程序时免不了遇到 bug ，而当 bug  发生以后，除了抓耳挠腮之外，一个常用的技术是
+单步调试。在写 C/C++ 程序的时候，我们有 Visual Studio 、gdb  这样顺手的调试器，而脚本
+语言开发者就没有这么好的待遇了。多年以来，像 JavaScript  语言一直缺乏有效的调试手段，
+“攻城师”只能依靠“眼观六路，耳听八方”的方式进行静态查错，或者在代码之间添加冗
+长的输出语句来分析可能出错的地方。直到有了 FireBug 、Chrome 开发者工具，JavaScript 才
+算有了基本的调试工具。在没有编译器或解译器的支持下，为缺乏内省机制的语言实现一个
+调试器是几乎不可能的。Node.js 的调试功能正是由 V8  提供的，保持了一贯的高效和方便的
+特性。尽管你也许已经对原始的调试方式十分适应，而且有了一套高效的调试技巧，但我们
+还是想介绍一下如何使用 Node.js  内置的工具和第三方模块来进行单步调试。 
+3.4.1  命令行调试 
+Node.js 支持命令行下的单步调试。下面是一个简单的程序： 
+var  a = 1; 
+var  b = 'world'; 
+46  第 3 章  Node.js快速入门 
+ 
+var  c = function (x) { 
+  console.log('hello ' + x + a); 
+}; 
+c(b); 
+在命令行下执行 node debug debug.js ，将会启动调试工具： 
+< debugger listening on port 5858 
+connecting... ok 
+break in /home/byvoid/debug.js:1 
+  1 var a = 1; 
+  2 var b = 'world'; 
+  3 var c = function (x) { 
+debug> 
+这样就打开了一个 Node.js  的调试终端，我们可以用一些基本的命令进行单步跟踪调试，
+参见表3-3。 
+表3-3  Node.js 调试命令 
+命  令  功  能 
+run  执行脚本，在第一行暂停 
+restart  重新执行脚本 
+cont, c  继续执行，直到遇到下一个断点 
+next, n  单步执行 
+step, s  单步执行并进入函数 
+out, o  从函数中步出 
+setBreakpoint(), sb()  在当前行设置断点 
+setBreakpoint(‘f()’), sb(...)  在函数f 的第一行设置断点 
+setBreakpoint(‘script.js’, 20), sb(...)  在 script.js  的第20 行设置断点 
+clearBreakpoint, cb(...)  清除所有断点 
+backtrace, bt  显示当前的调用栈 
+list(5)  显示当前执行到的前后5行代码 
+watch(expr)  把表达式 expr 加入监视列表 
+unwatch(expr)  把表达式 expr 从监视列表移除 
+watchers  显示监视列表中所有的表达式和值 
+repl  在当前上下文打开即时求值环境 
+kill  终止当前执行的脚本 
+scripts  显示当前已加载的所有脚本 
+version  显示 V8  的版本 
+ 
+3.4  调试    47 
+ 
+1 
+2 
+3 
+5 
+7 
+10 
+8 
+9 
+4 
+6 
+下面是一个简单的例子： 
+$ node debug debug.js 
+< debugger listening on port 5858 
+connecting... ok 
+break in /home/byvoid/debug.js:1 
+  1 var a = 1; 
+  2 var b = 'world'; 
+  3 var c = function  (x) { 
+debug> n 
+break in /home/byvoid/debug.js:2 
+  1 var a = 1; 
+  2 var b = 'world'; 
+  3 var c = function  (x) { 
+  4   console.log('hello ' + x + a); 
+debug> sb('debug.js', 4) 
+  1 var a = 1; 
+  2 var b = 'world'; 
+  3 var c = function  (x) { 
+* 4   console.log('hello ' + x + a); 
+  5 }; 
+  6 c(b); 
+  7 }); 
+debug> c 
+break in /home/byvoid/debug.js:4 
+  2 var b = 'world'; 
+  3 var c = function  (x) { 
+* 4   console.log('hello ' + x + a); 
+  5 }; 
+  6 c(b); 
+debug> repl 
+Press Ctrl + C to leave debug repl 
+> x 
+'world' 
+> a + 1 
+2 
+debug> c 
+< hello world1 
+program terminated 
+3.4.2  远程调试 
+V8 提供的调试功能是基于 TCP  协议的，因此 Node.js  可以轻松地实现远程调试。在命
+令行下使用以下两个语句之一可以打开调试服务器： 
+node --debug[=port]  script.js 
+node --debug-brk [=port]  script.js 
+48  第 3 章  Node.js快速入门 
+ 
+node --debug  命令选项可以启动调试服务器，默认情况下调试端口是 5858，也可以
+使用  --debug=1234 指定调试端口为 1234。使用 --debug 选项运行脚本时，脚本会正常
+执行，但不会暂停，在执行过程中调试客户端可以连接到调试服务器。如果要求脚本暂停执
+行等待客户端连接，则应该使用 --debug-brk 选项。这时调试服务器在启动后会立刻暂停
+执行脚本，等待调试客户端连接。 
+当调试服务器启动以后，可以用命令行调试工具作为调试客户端连接，例如： 
+//在一个终端中 
+$ node --debug-brk debug.js 
+debugger listening on port 5858 
+ 
+//在另一个终端中 
+$ node debug 127.0.0.1:5858 
+connecting... ok 
+debug> n 
+break in /home/byvoid/debug.js:2 
+  1 var a = 1; 
+  2 var b = 'world'; 
+  3 var c = function  (x) { 
+  4   console.log('hello ' + x + a); 
+debug> 
+事实上，当使用 node debug debug.js   命令调试时，只不过是用 Node.js  命令行工
+具将以上两步工作自动完成而已。 
+3.4.3 使用 Eclipse  调试 Node.js 
+基于 Node.js  的远程调试功能，我们甚至可以用支持 V8  调试协议的 IDE 调试，例如强
+大的 Eclipse。Eclipse 是深受广大“码农”喜爱的集成开发环境，有 Java  开发经验的对它一
+定不会陌生。在这一小节，我们将会学会如何使用 Eclipse  配置 Node.js  的调试环境，并实现
+单步调试功能。 
+1. 配置调试环境 
+在使用 Eclipse  之前，首先需要安装 JDK，可以在  http://www.oracle.com/technetwork/java/ 
+javase/downloads/index.html  获得，然后在 http://www.eclipse.org/downloads/  取得一份 Eclipse。 
+启动 Eclipse，选择菜单栏中  Help→Install New Software...，此时会打开一个安装对话框，
+点击右边的按钮Add...，接下来会打开一个标题为 Add Repository的对话框，在 Location  中输
+入 http://chromedevtools.goog lecode.com/svn/update/dev/，Name 中输入 Chrome Developer ，然
+后点击OK按钮。参见图3-7、图3-8和图3-9。 
+3.4  调试    49 
+ 
+1 
+2 
+3 
+5 
+7 
+10 
+8 
+9 
+4 
+6 
+ 
+图3-7  Help →Install New Software... 
+ 
+图3-8  Add... 
+ 
+图3-9  Add Repository 
+然后在Work with后面的组合框中选择刚刚添加的Chrome Developer，等待片刻，在列表
+中选中Google Chrome Developer Tools，然后点击Next ，参见图3-10 。 
+50  第 3 章  Node.js快速入门 
+ 
+ 
+图3-10   Google Chrome Developer Tools 
+这时 Eclipse  会计算出所需安装的包和依赖，点击Next ，参见图3-11 。 
+ 
+图3-11   计算依赖 
+3.4  调试    51 
+ 
+1 
+2 
+3 
+5 
+7 
+10 
+8 
+9 
+4 
+6 
+阅读 License ，选取I accept the terms of the license agreements ，点击Next ，参见图3-12 。 
+ 
+图3-12   License 
+接下来 Eclipse  会开始安装，稍等片刻，参见图3-13 。 
+ 
+图3-13   安装过程 
+安装完成以后 Eclipse  会提示重新启动以应用更新，点击Restart Now ，V8 调试工具就安
+装完成了，参见图3-14 。 
+ 
+图3-14   Restart Now 
+52  第 3 章  Node.js快速入门 
+ 
+2. 使用 Eclipse  调试 Node.js  程序 
+用 Eclipse  打开一个 Node.js  代码，选择Debug perspective进入调试视图，如图3-15 所示。
+点击工具栏中 Debug 图标右边的向下三角形，选择Debug Configurations...（参见图3-16 ）。在
+配置窗口的左侧找到Standalone V8 VM ，点击左上角的New 图标，会产生一个新的配置。在
+配置中填写好Name，如NodeDebug ，以及Host 和Port 。点击Apply应用配置，参见图3-17 。 
+ 
+图3-15   Debug perspective 
+ 
+图3-16   Debug Configurations... 
+3.4  调试    53 
+ 
+1 
+2 
+3 
+5 
+7 
+10 
+8 
+9 
+4 
+6 
+ 
+图3-17  配置 Standalone V8 VM 
+接下来，通过 node --debug-brk=5858 debug.js 命令启动要调试脚本的调试服
+务器，然后在 Eclipse  的工具栏中点击调试按钮，即可启动调试，如图3-18 所示。 
+ 
+图3-18   启动调试 
+54  第 3 章  Node.js快速入门 
+ 
+接下来你就可以随心所欲地使用 Eclipse  这个强大的 IDE 来调试 Node.js  脚本了。如果
+你对 Eclipse  比较熟悉，你会惊喜地发现 Eclipse  的所有单步调试、断点、监视功能均可以非
+常方便地使用。 
+3.4.4 使用 node-inspector 调试 Node.js 
+大部分基于 Node.js  的应用都是运行在浏览器中的，例如强大的调试工具 node-inspector。
+node-inspector 是一个完全基于 Node.js  的开源在线调试工具，提供了强大的调试功能和友好
+的用户界面，它的使用方法十分简便。 
+首先，使用  npm install -g node-inspector  命令安装 node-inspector，然后在终
+端中通过 node --debug-brk=5858 debug.js 命令连接你要除错的脚本的调试服务器，
+启动 node-inspector： 
+$ node-inspector 
+在浏览器中打开 http://127.0.0.1:8080/debug?port=5858，即可显示出优雅的 Web   调试工
+具，参见图3-19 。 
+ 
+图3-19   node-inspector 
+node-inspector 的使用方法十分简单，和浏览器脚本调试工具一样，支持单步、断点、
+调用栈帧查看等功能。无论你以前有没有使用过调试工具，都可以在几分钟以内轻松掌握。 
+3.5  参考资料    55 
+ 
+1 
+2 
+3 
+5 
+7 
+10 
+8 
+9 
+4 
+6 
+ 
+node-inspector 使用了 WebKit Web Inspector ，因此只能在  Chrome 、Safari 
+等 We b K i t  内核的浏览器中使用，而不支持 Firefox  或 Internet Explorer。

@@ -1,0 +1,222 @@
+5.5  建立微博网站 
+在前面的几节中，我们已经对 Express  进行了基本的介绍，现在让我们动手开始创建一
+个微博网站吧。 
+5.5.1  功能分析 
+开发中的一个大忌就是没有想清楚要做什么就开始动手，因此我们准备在动手实践之前
+先规划一下网站的功能，即使是出于学习目的也不例外。首先，微博应该以用户为中心，因
+此需要有用户的注册和登录功能。微博网站最核心的功能是信息的发表，这个功能涉及许多
+方面，包括数据库访问、前端显示等。一个完整的微博系统应该支持信息的评论、转发、圈
+点用户等功能，但出于演示目的，我们不能一一实现所有功能，只是实现一个微博社交网站
+的雏形。 
+5.5.2  路由规划 
+在完成功能设计以后，下一个要做的事情就是路由规划了。路由规划，或者说控制器规
+划是整个网站的骨架部分，因为它处于整个架构的枢纽位置，相当于各个接口之间的粘合剂，
+所以应该优先考虑。 
+根据功能设计，我们把路由按照以下方案规划。 
+   / ：首页  
+  /u/[user] ：用户的主页   
+   /post ：发表信息  
+   /reg ：用户注册  
+   /login ：用户登录  
+   /logout ：用户登出  
+以上页面还可以根据用户状态细分。发表信息以及用户登出页面必须是已登录用户才能
+操作的功能，而用户注册和用户登入所面向的对象必须是未登入的用户。首页和用户主页则
+针对已登入和未登入的用户显示不同的内容。 
+打开 app.js ，把 Routes  部分修改为： 
+app.get('/', routes.index); 
+app.get('/u/:user', routes.user); 
+app.post('/post', routes.post); 
+5.5  建立微博网站    103 
+ 
+1 
+2 
+3 
+5 
+7 
+10 
+8 
+9 
+4 
+6 
+app.get('/reg', routes.reg); 
+app.post('/reg', routes.doReg); 
+app.get('/login', routes.login); 
+app.post('/login', routes.doLogin); 
+app.get('/logout', routes.logout); 
+其中 / post 、/login  和 /reg 由于要接受表单信息，因此使用 app.post  注册路由。/login 
+和 /reg 还要显示用户注册时要填写的表单，所以要以 app.get 注册。同时在 routes/index.js 
+中添加相应的函数： 
+exports.index =  function (req, res) { 
+  res.render('index', { title: 'Express' }); 
+}; 
+ 
+exports.user = function (req, res) { 
+}; 
+ 
+exports.post = function (req, res) { 
+}; 
+ 
+exports.reg = function (req, res) { 
+}; 
+ 
+exports.doReg =  function (req, res) { 
+}; 
+ 
+exports.login =  function (req, res) { 
+}; 
+ 
+exports.doLogin =  function (req, res) { 
+}; 
+ 
+exports.logout = function (req, res) { 
+}; 
+我们将在5.6节介绍会话（session ），说明如何管理用户的状态。  
+5.5.3  界面设计 
+我们在开发网站的时候必须时刻意识到网站是为用户开发的，因而用户界面是非常重要
+的。一种普遍的观点是后端的开发者不必太多关注前端用户体验，因为这是前端程序员和设
+计师要做的事情。但实际上为了设计一个优雅的界面，后端程序员也不得不介入功能实现，
+因为很多时候前端和后端无法完全划分，仅仅靠前端开发者是无法设计出优美而又可用的界
+面的。
+①
+ 
+—————————— 
+① 我并不是鼓励后端开发者越俎代疱，只是建议后端开发者略微了解前端的技术，以便于在大型工程中更好地合作。
+同时当没有前端开发者与你合作的时候，也可以设计出不至于太难看的页面。 
+104  第 5 章  使用Node.js进行Web 开发 
+ 
+作为后端开发者，你可能和我一样都不太擅长设计，不过没关系，我们可以利用已有的
+优秀设计。如果你认同 Twitter  的简洁风格，那么 Twitter Bootstrap  是最好的选择。Twitter 
+Bootstrap 是由 Twitter  的设计师和工程师发起的开源项目，它提供了一套与 Twitter  风格一致
+的简洁、优雅的 Web  UI ，包含了完全由 HTML、CSS 、JavaScript  实现的用户交互工具。不
+管你是资深的前端工程师，还是专业的后端开发者，你都可以轻松地使用Twitter Bootstrap 制
+作出优美的界面。图5-8  是Twitter Bootstrap 部件的介绍页面。 
+ 
+图5-8  Twitter Bootstrap 
+5.5.4 使用 Bootstrap 
+现在我们就用 Bootstrap  开始设计我们的界面。从http://twitter.github.com/bootstrap/ 下载 
+bootstrap.zip，解压后可以看到以下文件： 
+css/bootstrap-responsive.css 
+css/bootstrap-responsive.min.css 
+css/bootstrap.css 
+css/bootstrap.min.css 
+img/glyphicons-halflings-white.png 
+img/glyphicons-halflings.png 
+js/bootstrap.js 
+js/bootstrap.min.js 
+5.5  建立微博网站    105 
+ 
+1 
+2 
+3 
+5 
+7 
+10 
+8 
+9 
+4 
+6 
+其中所有的 JavaScript  和 CSS  文件都提供了开发版和产品版，前者是原始的代码，后者
+经过压缩，文件名中带有 min 。将 img 目录复制到工程 public 目录下，将 bootstrap.css 、
+bootstrap-responsive.css  复制到 public/stylesheets  中，将 bootstrap.js 复制到 public/javascripts  目
+录中，然后从http://jquery.com/ 下载一份最新版的 jquery.js  也放入 public/javascripts  目录中。 
+接下来，修改 views/layout.ejs ： 
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
+<html> 
+  <head> 
+    <title><%= title %> - Microblog</title> 
+    <link rel='stylesheet' href='/stylesheets/bootstrap.css' /> 
+    <style type="text/css"> 
+      body { 
+        padding-top: 60px; 
+        padding-bottom: 40px; 
+      } 
+    </style> 
+    <link href="stylesheets/bootstrap-responsive.css" rel="stylesheet"> 
+  </head> 
+  <body> 
+   
+    <div class="navbar navbar-fixed-top"> 
+      <div class="navbar-inner"> 
+        <div class="container"> 
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse"> 
+            <span class="icon-bar"></span> 
+            <span class="icon-bar"></span> 
+            <span class="icon-bar"></span> 
+          </a> 
+          <a class="brand" href="/">Microblog</a> 
+          <div class="nav-collapse"> 
+            <ul class="nav"> 
+              <li class="active"><a href="/">首页</a></li> 
+              <li><a href="/login">登入</a></li> 
+              <li><a href="/reg"> 注册</a></li> 
+            </ul> 
+          </div> 
+        </div> 
+      </div> 
+    </div> 
+ 
+    <div id="container" class="container"> 
+      <%- body %> 
+106  第 5 章  使用Node.js进行Web 开发 
+ 
+      <hr /> 
+      <footer> 
+        <p><a href="http://www.byvoid.com/" target="_blank">BYVoid</a> 2012</p> 
+      </footer> 
+    </div> 
+  </body> 
+  <script src="/javascripts/jquery.js"></script> 
+  <script src="/javascripts/bootstrap.js"></script> 
+</html> 
+上面代码是使用 Bootstrap部件实现的一个简单页面框架，整个页面分为顶部工具栏、正
+文和页脚三部分，其中正文和页脚包含在名为  container  的  div  标签中。 
+最后我们设计首页，修改 views/index.ejs ： 
+<div class="hero-unit" >  
+  <h1>欢迎来到 Microblog</h1> 
+  <p> Microblog 是一个基于 Node.js 的微博系统。</p> 
+  <p> 
+    <a class="btn btn-primary btn-large" href="/login" > 登录</a> 
+    <a class="btn btn-large" href="/reg"> 立即注册</a> 
+  </p> 
+</div>  
+ 
+<div class="row">  
+  <div class="span4">  
+    <h2>Carbo  说</h2> 
+     <p> 东风破早梅 向暖一枝开  冰雪无人见 春从天上来</p> 
+  </div> 
+  <div class="span4">  
+    <h2>BYVoid 说</h2> 
+     <p> 
+     Open Chinese Convert（OpenCC ）是一个开源的中文简繁转换项目， 
+     致力于制作高质量的基于统计预料的简繁转换词库。 
+     还提供函数库(libopencc) 、命令行简繁转换工具、人工校对工具、词典生成程序、 
+     在线转换服务及图形用户界面。</p> 
+  </div> 
+  <div class="span4">  
+    <h2>佛振 说</h2> 
+    <p> 中州韵输入法引擎 / Rime Input Method Engine 取意历史上通行的中州韵， 
+    愿写就一部汇集音韵学智慧的输入法经典之作。 
+    项目网站设在 http://code.google.com/p/rimeime/  
+    创造应用价值是一方面，更要坚持对好技术的追求，希望能写出灵动而易于扩展的代码， 
+    使其成为一款个性十足的开源输入法。</p> 
+  </div> 
+</div> 
+5.6  用户注册和登录    107 
+ 
+1 
+2 
+3 
+5 
+7 
+10 
+8 
+9 
+4 
+6 
+首页的效果如图5-9  所示。 
+ 
+图5-9 使用 Bootstrap  实现的首页 
+怎么样？即使不懂设计也做出了优雅的界面，使用 Bootstrap  可以大大简化前端设计
+工作。

@@ -1,0 +1,208 @@
+4.4  文件系统  fs 
+fs  模块是文件操作的封装，它提供了文件的读取、写入、更名、删除、遍历目录、链
+66  第 4 章  Node.js核心模块 
+ 
+接等 POSIX  文件系统操作。与其他模块不同的是，fs 模块中所有的操作都提供了异步的和
+同步的两个版本，例如读取文件内容的函数有异步的  fs.readFile()   和同步的 
+fs.readFileSync()。我们以几个函数为代表，介绍 fs 常用的功能，并列出 fs 所有函数
+的定义和功能。 
+4.4.1  fs.readFile 
+fs.readFile(filename,[encoding],[callback(err,data)]) 是最简单的读取
+文件的函数。它接受一个必选参数 filename ，表示要读取的文件名。第二个参数 encoding  
+是可选的，表示文件的字符编码。callback  是回调函数，用于接收文件的内容。如果不指
+定 encoding ，则  callback  就是第二个参数。回调函数提供两个参数 err  和 data，err  表
+示有没有错误发生，data 是文件内容。如果指定了 encoding ，data 是一个解析后的字符
+串，否则  data  将会是以 Buffer  形式表示的二进制数据。 
+例如以下程序，我们从 content.txt  中读取数据，但不指定编码： 
+var  fs = require('fs'); 
+ 
+fs.readFile('content.txt', function (err, data) { 
+  if (err) { 
+    console.error(err); 
+  } else { 
+    console.log(data); 
+  } 
+}); 
+假设 content.txt  中的内容是 UTF-8 编码的  Text 文本文件示例，运行结果如下： 
+<Buffer 54 65 78 74 20 e6 96 87 e6 9c ac e6 96 87 e4 bb b6 e7 a4 ba e4 be 8b> 
+这个程序以二进制的模式读取了文件的内容，data  的值是  Buffer  对象。如果我们给 
+fs.readFile  的  encoding   指定编码： 
+var fs = require('fs'); 
+ 
+fs.readFile('content.txt', 'utf-8', function(err, data) { 
+  if (err) { 
+    console.error(err); 
+  } else { 
+    console.log(data); 
+  } 
+}); 
+那么运行结果则是： 
+Text 文本文件示例 
+4.4  文件系统 fs    67 
+ 
+1 
+2 
+3 
+5 
+7 
+10 
+8 
+9 
+4 
+6 
+当读取文件出现错误时，err 将会是  Error 对象。如果 content.txt  不存在，运行前面
+的代码则会出现以下结果： 
+{ [Error: ENOENT, no such file or directory 'content.txt'] errno: 34, code: 'ENOENT', 
+path: 'content.txt' } 
+Node.js 的异步编程接口习惯是以函数的最后一个参数为回调函数，通
+常一个函数只有一个回调函数。回调函数是实际参数中第一个是  err ，其
+余的参数是其他返回的内容。如果没有发生错误，err   的值会是  null  或 
+undefined。如果有错误发生，err   通常是  Error   对象的实例。 
+4.4.2  fs.readFileSync  
+fs.readFileSync(filename, [encoding]) 是  fs.readFile  同步的版本。它接受
+的参数和 fs.readFile 相同，而读取到的文件内容会以函数返回值的形式返回。如果有错
+误发生，fs 将会抛出异常，你需要使用  try  和 catch   捕捉并处理异常。 
+与同步 I/O  函数不同，Node.js 中异步函数大多没有返回值。 
+4.4.3  fs.open 
+fs.open(path, flags, [mode], [callback(err, fd)]) 是 POSIX  open  函数的
+封装，与 C 语言标准库中的  fopen  函数类似。它接受两个必选参数，path  为文件的路径，
+flags   可以是以下值。 
+   r ：以读取模式打开文件。 
+   r+ ：以读写模式打开文件。 
+   w ：以写入模式打开文件，如果文件不存在则创建。 
+   w+ ：以读写模式打开文件，如果文件不存在则创建。 
+   a ：以追加模式打开文件，如果文件不存在则创建。 
+   a+ ：以读取追加模式打开文件，如果文件不存在则创建。 
+mode  参数用于创建文件时给文件指定权限，默认是 0666
+①
+。回调函数将会传递一个文
+件描述符  fd
+②
+。 
+—————————— 
+① 文件权限指的是 POSIX  操作系统中对文件读取和访问权限的规范，通常用一个八进制数来表示。例如 0754 表
+示文件所有者的权限是 7  （读、写、执行），同组的用户权限是 5  （读、执行），其他用户的权限是 4  （读），
+写成字符表示就是 -rwxr-xr-- 。 
+② 文件描述符是一个非负整数，表示操作系统内核为当前进程所维护的打开文件的记录表索引。 
+68  第 4 章  Node.js核心模块 
+ 
+4.4.4  fs.read 
+fs.read(fd, buffer, offset, length, position, [callback(err, bytesRead, 
+buffer)])是 POSIX  read 函数的封装，相比 fs.readFile 提供了更底层的接口。fs.read 
+的功能是从指定的文件描述符 fd 中读取数据并写入 buffer 指向的缓冲区对象。offset 是 
+buffer 的写入偏移量。length 是要从文件中读取的字节数。position  是文件读取的起始
+位置，如果  position   的值为  null，则会从当前文件指针的位置读取。回调函数传递 
+bytesRead  和  buffer，分别表示读取的字节数和缓冲区对象。 
+以下是一个使用  fs.open  和  fs.read  的示例。 
+var  fs = require('fs'); 
+ 
+fs.open('content.txt', 'r',  function (err, fd) { 
+  if (err) { 
+    console.error(err); 
+    return ; 
+  } 
+   
+  var  buf = new  Buffer( 8 ); 
+  fs.read(fd, buf, 0 , 8 , null, function (err, bytesRead, buffer) { 
+    if (err) { 
+      console.error(err); 
+       return ; 
+    } 
+     
+    console.log('bytesRead: ' + bytesRead); 
+    console.log(buffer); 
+  }) 
+}); 
+运行结果则是： 
+bytesRead: 8 
+<Buffer 54 65 78 74 20 e6 96 87> 
+一般来说，除非必要，否则不要使用这种方式读取文件，因为它要求你手动管理缓冲区
+和文件指针，尤其是在你不知道文件大小的时候，这将会是一件很麻烦的事情。 
+表4-1列出了fs所有函数的定义和功能。 
+表4-1  fs 模块函数表 
+功  能  异步函数  同步函数 
+打开文件  fs.open(path,flags, [mode], [callback(err, 
+fd)]) 
+fs.openSync(path, flags, [mode]) 
+关闭文件  fs.close(fd, [callback(err)])  fs.closeSync(fd) 
+4.4  文件系统 fs    69 
+ 
+1 
+2 
+3 
+5 
+7 
+10 
+8 
+9 
+4 
+6 
+（续） 
+功  能  异步函数  同步函数 
+读取文件（文件描
+述符） 
+fs.read(fd,buffer,offset,length,position, 
+[callback(err, bytesRead, buffer)]) 
+fs.readSync(fd, buffer, offset, 
+length, position) 
+写入文件（文件描
+述符） 
+fs.write(fd,buffer,offset,length,position, 
+[callback(err, bytesWritten, buffer)]) 
+fs.writeSync(fd, buffer, offset, 
+length, position) 
+读取文件内容  fs.readFile(filename,[encoding],[callba
+ck(err, data)]) 
+fs.readFileSync(filename, 
+[encoding]) 
+写入文件内容  fs.writeFile(filename, data,[encoding], 
+[callback(err)]) 
+fs.writeFileSync(filename, data, 
+[encoding]) 
+删除文件  fs.unlink(path, [callback(err)])  fs.unlinkSync(path) 
+创建目录  fs.mkdir(path, [mode], [callback(err)]) fs.mkdirSync(path, [mode]) 
+删除目录  fs.rmdir(path, [callback(err)])  fs.rmdirSync(path) 
+读取目录  fs.readdir(path, [callback(err, files)]) fs.readdirSync(path) 
+获取真实路径  fs.realpath(path, [callback(err, 
+resolvedPath)]) 
+fs.realpathSync(path) 
+更名  fs.rename(path1, path2, [callback(err)]) fs.renameSync(path1, path2) 
+截断  fs.truncate(fd, len, [callback(err)])  fs.truncateSync(fd, len) 
+更改所有权  fs.chown(path, uid, gid, [callback(err)]) fs.chownSync(path, uid, gid) 
+更改所有权（文件
+描述符） 
+fs.fchown(fd, uid, gid, [callback(err)]) fs.fchownSync(fd, uid, gid) 
+更改所有权（不解
+析符号链接） 
+fs.lchown(path, uid, gid, [callback(err)]) fs.lchownSync(path, uid, gid) 
+更改权限  fs.chmod(path, mode, [callback(err)])  fs.chmodSync(path, mode) 
+更改权限（文件描
+述符） 
+fs.fchmod(fd, mode, [callback(err)])  fs.fchmodSync(fd, mode) 
+更改权限（不解析
+符号链接） 
+fs.lchmod(path, mode, [callback(err)])  fs.lchmodSync(path, mode) 
+获取文件信息  fs.stat(path, [callback(err, stats)])  fs.statSync(path) 
+获取文件信息（文
+件描述符） 
+fs.fstat(fd, [callback(err, stats)])  fs.fstatSync(fd) 
+获取文件信息（不
+解析符号链接） 
+fs.lstat(path, [callback(err, stats)])  fs.lstatSync(path) 
+创建硬链接  fs.link(srcpath, dstpath, [callback(err)]) fs.linkSync(srcpath, dstpath) 
+创建符号链接  fs.symlink(linkdata, path, [type], 
+[callback(err)]) 
+fs.symlinkSync(linkdata, path, 
+[type]) 
+读取链接  fs.readlink(path, [callback(err, 
+linkString)]) 
+fs.readlinkSync(path) 
+修改文件时间戳  fs.utimes(path, atime, mtime, [callback 
+(err)]) 
+fs.utimesSync(path, atime, mtime) 
+修改文件时间戳
+（文件描述符） 
+fs.futimes(fd, atime, mtime, [callback 
+(err)]) 
+fs.futimesSync(fd, atime, mtime) 
+同步磁盘缓存  fs.fsync(fd, [callback(err)])  fs.fsyncSync(fd)
