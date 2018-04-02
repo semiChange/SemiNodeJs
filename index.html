@@ -9,6 +9,11 @@
 	<script src="https://cdn.bootcss.com/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
 	<script src="https://cdn.bootcss.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 	<style>
+	@media (max-width: 576px) {
+		.aaa{
+			padding-left:0;
+		}
+	}
 	</style>
 	<script>
 		$(function(){
@@ -36,7 +41,7 @@
 	
 	<div class="container-fluid my-2 bg-white" >
 		<div class="row">
-			<div class="col-2 bg-secondary" id="accordion">
+			<div class="col-md-2 bg-secondary" id="accordion">
 				<ul class="list-unstyled ">
 					<li>
 						<div data-toggle="collapse" data-target="#collapse1" aria-expanded="true" aria-controls="collapse1">
@@ -176,7 +181,7 @@
 				</ul>
 				
 			</div>
-			<div class="col-10 pr-0">
+			<div class="col-md-10 pr-0 aaa">
 				<div class="col bg-secondary text-light py-3" id="ajaxLoad">
 					Hello, welcome to Node.js ....<br>
 					I am semi from ChongMing Island. <br>					
