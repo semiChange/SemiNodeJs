@@ -1,1 +1,2 @@
-console.log(123);
+function say(){console.log(123);}
+export say;
